@@ -210,6 +210,33 @@
     line-height: 1.6;
   }
 
+  .close-btn {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform .12s ease, color .2s ease, border-color .2s ease;
+  }
+  .close-btn:active { transform: scale(0.98); }
+  .close-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  .credit {
+    text-align: center;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    opacity: 0.6;
+    margin-top: 2px;
+  }
+  .credit b { color: var(--text); font-weight: 500; opacity: 0.85; }
+
   .toast {
     position: fixed;
     left: 50%;
@@ -255,6 +282,10 @@
       데이터는 이 기기에만 저장됩니다.<br />
       Safari 공유 → "홈 화면에 추가"로 앱처럼 사용하세요.
     </div>
+
+    <button class="close-btn" id="closeBtn">✕ 앱 닫기</button>
+
+    <div class="credit">made by <b>Tiger Soft</b> 🐯</div>
   </div>
 
   <div class="toast" id="toast">저장됨</div>
@@ -271,6 +302,7 @@
     var timeDisp   = document.getElementById("timeDisplay");
     var floorsEl   = document.getElementById("floors");
     var clearBtn   = document.getElementById("clearBtn");
+    var closeBtn   = document.getElementById("closeBtn");
     var toastEl    = document.getElementById("toast");
     var buttons    = Array.prototype.slice.call(document.querySelectorAll(".floor-btn"));
 
@@ -385,6 +417,14 @@
       render(null);
       showToast("위치를 지웠습니다");
       if (navigator.vibrate) { try { navigator.vibrate(10); } catch (e) {} }
+    });
+
+    closeBtn.addEventListener("click", function () {
+      // 스크립트로 연 창이면 바로 닫힘. 홈 화면 앱(iOS)은 정책상 종료 불가.
+      try { window.close(); } catch (e) {}
+      if (!window.closed) {
+        showToast("앱 스위처에서 위로 밀어 닫아주세요");
+      }
     });
 
     // 다른 탭/기기 복귀 시 최신 상태 반영
