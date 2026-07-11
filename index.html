@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0f1115" />
+<!-- iOS 홈 화면 앱 설정 -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="내 차 어디있지?" />
+<title>내 차 어디있지?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #1a1d24;
+    --card-2: #21252e;
+    --text: #f3f5f8;
+    --muted: #8b93a1;
+    --line: #2c313b;
+    --gold: #f2b544;   /* B1 */
+    --teal: #34c9b8;   /* B2 */
+    --coral: #ff6f61;  /* B3 */
+    --accent: var(--teal);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background: radial-gradient(140% 100% at 50% 0%, #171a21 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+    min-height: 100%;
+    display: flex;
+    justify-content: center;
+    padding:
+      calc(var(--safe-top) + 20px)
+      16px
+      calc(var(--safe-bottom) + 24px);
+  }
+
+  .app {
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  header {
+    text-align: center;
+    padding: 4px 0 2px;
+  }
+  header .title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  header .sub {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ── 현재 위치 상태 카드 ── */
+  .status {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 26px 22px;
+    text-align: center;
+    overflow: hidden;
+    transition: border-color .3s ease;
+  }
+  .status::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 55%);
+    opacity: 0;
+    transition: opacity .3s ease;
+    pointer-events: none;
+  }
+  .status.has-loc::before { opacity: 1; }
+  .status.has-loc { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+
+  .status .label {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .status .floor {
+    font-family: "Oswald", sans-serif;
+    font-weight: 700;
+    font-size: 92px;
+    line-height: 1.05;
+    margin: 6px 0 2px;
+    color: var(--accent);
+    letter-spacing: 0.01em;
+  }
+  .status .floor.empty {
+    color: var(--muted);
+    font-size: 40px;
+    padding: 18px 0;
+  }
+  .status .time {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  /* ── 층 선택 버튼 ── */
+  .picker-label {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: -6px;
+  }
+  .floors {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .floor-btn {
+    --c: var(--teal);
+    position: relative;
+    appearance: none;
+    border: 1.5px solid var(--line);
+    background: var(--card-2);
+    color: var(--text);
+    border-radius: 20px;
+    padding: 22px 0 18px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: transform .12s ease, border-color .2s ease, background .2s ease;
+    user-select: none;
+  }
+  .floor-btn:active { transform: scale(0.96); }
+  .floor-btn .big {
+    font-family: "Oswald", sans-serif;
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--c);
+    line-height: 1;
+  }
+  .floor-btn .cap {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .floor-btn[data-floor="B1"] { --c: var(--gold); }
+  .floor-btn[data-floor="B2"] { --c: var(--teal); }
+  .floor-btn[data-floor="B3"] { --c: var(--coral); }
+
+  .floor-btn.selected {
+    border-color: var(--c);
+    background: color-mix(in srgb, var(--c) 16%, var(--card-2));
+  }
+  .floor-btn.pulse {
+    animation: pulse 0.6s ease;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 60%, transparent); }
+    60%  { box-shadow: 0 0 0 14px color-mix(in srgb, var(--c) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+
+  /* ── 지우기 버튼 ── */
+  .clear-btn {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 16px;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity .3s ease, transform .12s ease, color .2s ease, border-color .2s ease;
+  }
+  .clear-btn:active { transform: scale(0.98); }
+  .clear-btn:not([disabled]):hover { color: var(--text); border-color: var(--muted); }
+  .clear-btn[disabled] {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  .hint {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.7;
+    line-height: 1.6;
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--safe-bottom) + 28px);
+    transform: translate(-50%, 20px);
+    background: var(--accent);
+    color: #0c0f13;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease;
+    z-index: 20;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">🅿️ 내 차 어디있지?</div>
+      <div class="sub">주차한 층을 한 번만 탭하세요</div>
+    </header>
+
+    <section class="status" id="status">
+      <div class="label">현재 주차 위치</div>
+      <div class="floor empty" id="floorDisplay">— 미저장 —</div>
+      <div class="time" id="timeDisplay">아래에서 층을 선택하세요</div>
+    </section>
+
+    <div class="picker-label">주차한 층 선택</div>
+    <div class="floors" id="floors">
+      <button class="floor-btn" data-floor="B1"><span class="big">B1</span><span class="cap">지하 1층</span></button>
+      <button class="floor-btn" data-floor="B2"><span class="big">B2</span><span class="cap">지하 2층</span></button>
+      <button class="floor-btn" data-floor="B3"><span class="big">B3</span><span class="cap">지하 3층</span></button>
+    </div>
+
+    <button class="clear-btn" id="clearBtn" disabled>🚗 차 찾음 · 위치 지우기</button>
+
+    <div class="hint">
+      데이터는 이 기기에만 저장됩니다.<br />
+      Safari 공유 → "홈 화면에 추가"로 앱처럼 사용하세요.
+    </div>
+  </div>
+
+  <div class="toast" id="toast">저장됨</div>
+
+<script>
+  (function () {
+    "use strict";
+
+    var STORAGE_KEY = "myparking.current.v1";
+    var FLOOR_COLORS = { B1: "--gold", B2: "--teal", B3: "--coral" };
+
+    var statusEl   = document.getElementById("status");
+    var floorDisp  = document.getElementById("floorDisplay");
+    var timeDisp   = document.getElementById("timeDisplay");
+    var floorsEl   = document.getElementById("floors");
+    var clearBtn   = document.getElementById("clearBtn");
+    var toastEl    = document.getElementById("toast");
+    var buttons    = Array.prototype.slice.call(document.querySelectorAll(".floor-btn"));
+
+    var saveTimer = null;
+    var toastTimer = null;
+
+    function load() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+
+    function persist(data) {
+      try {
+        if (data) localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        else localStorage.removeItem(STORAGE_KEY);
+      } catch (e) { /* 저장 불가(사생활 모드 등) 시 무시 */ }
+    }
+
+    function formatTime(ts) {
+      var d = new Date(ts);
+      var now = new Date();
+      var sameDay = d.toDateString() === now.toDateString();
+      var yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      var isYesterday = d.toDateString() === yesterday.toDateString();
+
+      var h = d.getHours();
+      var m = d.getMinutes();
+      var ampm = h < 12 ? "오전" : "오후";
+      var h12 = h % 12; if (h12 === 0) h12 = 12;
+      var mm = m < 10 ? "0" + m : "" + m;
+      var timeStr = ampm + " " + h12 + ":" + mm;
+
+      var dayStr;
+      if (sameDay) dayStr = "오늘";
+      else if (isYesterday) dayStr = "어제";
+      else dayStr = (d.getMonth() + 1) + "월 " + d.getDate() + "일";
+
+      return dayStr + " " + timeStr + " 저장";
+    }
+
+    function setAccent(floor) {
+      var varName = FLOOR_COLORS[floor];
+      if (varName) {
+        document.documentElement.style.setProperty("--accent", "var(" + varName + ")");
+      }
+    }
+
+    function render(data) {
+      // 버튼 선택 상태
+      buttons.forEach(function (b) {
+        b.classList.toggle("selected", !!data && b.getAttribute("data-floor") === data.floor);
+      });
+
+      if (data && data.floor) {
+        setAccent(data.floor);
+        statusEl.classList.add("has-loc");
+        floorDisp.textContent = data.floor;
+        floorDisp.classList.remove("empty");
+        timeDisp.textContent = formatTime(data.savedAt);
+        clearBtn.removeAttribute("disabled");
+      } else {
+        statusEl.classList.remove("has-loc");
+        floorDisp.textContent = "— 미저장 —";
+        floorDisp.classList.add("empty");
+        timeDisp.textContent = "아래에서 층을 선택하세요";
+        clearBtn.setAttribute("disabled", "");
+      }
+    }
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toastEl.classList.remove("show");
+      }, 1500);
+    }
+
+    function selectFloor(floor, btn) {
+      // 즉시 시각 반영 + 펄스 애니메이션
+      setAccent(floor);
+      buttons.forEach(function (b) { b.classList.remove("selected"); });
+      btn.classList.add("selected");
+      btn.classList.remove("pulse");
+      // 리플로우로 애니메이션 재시작
+      void btn.offsetWidth;
+      btn.classList.add("pulse");
+
+      // 펄스가 잠깐 재생된 뒤 자동 저장 (추가 확인 단계 없음)
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () {
+        var data = { floor: floor, savedAt: Date.now() };
+        persist(data);
+        render(data);
+        showToast(floor + " 저장됨");
+        if (navigator.vibrate) { try { navigator.vibrate(15); } catch (e) {} }
+      }, 350);
+    }
+
+    // 이벤트 바인딩
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        selectFloor(btn.getAttribute("data-floor"), btn);
+      });
+    });
+
+    clearBtn.addEventListener("click", function () {
+      persist(null);
+      render(null);
+      showToast("위치를 지웠습니다");
+      if (navigator.vibrate) { try { navigator.vibrate(10); } catch (e) {} }
+    });
+
+    // 다른 탭/기기 복귀 시 최신 상태 반영
+    window.addEventListener("focus", function () { render(load()); });
+
+    // 초기 렌더
+    render(load());
+  })();
+</script>
+</body>
+</html>
