@@ -523,8 +523,8 @@
     function currentTgCfg() {
       return {
         enabled: notifEnabled.checked,
-        token: tgToken.value.trim(),
-        chatId: tgChatId.value.trim()
+        token: tgToken.value.replace(/\s+/g, ""),
+        chatId: tgChatId.value.replace(/\s+/g, "")
       };
     }
     function saveTgCfg() {
@@ -591,7 +591,7 @@
 
     // Chat ID 찾기: 봇에게 보낸 최근 메시지에서 chat.id 추출
     tgFindBtn.addEventListener("click", function () {
-      var token = tgToken.value.trim();
+      var token = tgToken.value.replace(/\s+/g, "");
       if (!token) { showToast("먼저 봇 토큰을 입력하세요"); return; }
       showToast("Chat ID 찾는 중...");
       tgApi(token, "getUpdates").then(function (j) {
