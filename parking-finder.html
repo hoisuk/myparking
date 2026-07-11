@@ -34,7 +34,7 @@
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  html, body { height: 100%; }
+  html { height: 100%; }
 
   body {
     margin: 0;
@@ -42,12 +42,14 @@
     color: var(--text);
     font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
     min-height: 100%;
+    min-height: 100dvh;      /* 콘텐츠가 화면보다 길면 body가 늘어나며 전체 스크롤 */
     display: flex;
     justify-content: center;
+    align-items: flex-start; /* 위에서부터 쌓이게 하여 하단 잘림 방지 */
     padding:
       calc(var(--safe-top) + 20px)
       16px
-      calc(var(--safe-bottom) + 24px);
+      calc(var(--safe-bottom) + 40px);
   }
 
   .app {
