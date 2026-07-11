@@ -237,6 +237,74 @@
   }
   .credit b { color: var(--text); font-weight: 500; opacity: 0.85; }
 
+  /* ── 텔레그램 알림 설정 ── */
+  .settings {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--card);
+    overflow: hidden;
+  }
+  .settings > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .settings > summary::-webkit-details-marker { display: none; }
+  .settings .dot {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: "JetBrains Mono", monospace;
+  }
+  .settings .dot.on { color: var(--teal); }
+  .settings .body {
+    padding: 2px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; color: var(--text);
+  }
+  .switch { position: relative; width: 46px; height: 26px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: var(--line); border-radius: 999px; transition: .2s; }
+  .slider::before {
+    content: ""; position: absolute; height: 20px; width: 20px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: .2s;
+  }
+  .switch input:checked + .slider { background: var(--teal); }
+  .switch input:checked + .slider::before { transform: translateX(20px); }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; color: var(--muted); letter-spacing: 0.03em; }
+  .field input {
+    width: 100%; box-sizing: border-box;
+    background: var(--card-2); border: 1px solid var(--line);
+    border-radius: 10px; color: var(--text);
+    padding: 11px 12px; font-size: 13px;
+    font-family: "JetBrains Mono", monospace;
+  }
+  .field input:focus { outline: none; border-color: var(--muted); }
+  .row { display: flex; gap: 8px; }
+  .mini-btn {
+    appearance: none; border: 1px solid var(--line);
+    background: var(--card-2); color: var(--text);
+    border-radius: 10px; padding: 11px 12px;
+    font-size: 12px; font-weight: 500; font-family: inherit;
+    cursor: pointer; white-space: nowrap; flex: 1;
+    transition: transform .12s ease;
+  }
+  .mini-btn:active { transform: scale(0.98); }
+  .mini-btn.primary { background: var(--teal); color: #0c0f13; border-color: transparent; font-weight: 700; }
+  .settings .help { font-size: 11px; color: var(--muted); line-height: 1.7; opacity: 0.85; }
+  .settings .help b { color: var(--text); font-weight: 600; }
+
   .toast {
     position: fixed;
     left: 50%;
@@ -278,6 +346,35 @@
 
     <button class="clear-btn" id="clearBtn" disabled>🚗 차 찾음 · 위치 지우기</button>
 
+    <details class="settings" id="settings">
+      <summary>🔔 텔레그램 알림 설정 <span class="dot" id="notifDot">꺼짐</span></summary>
+      <div class="body">
+        <div class="toggle-row">
+          <span>주차 저장 시 텔레그램 알림</span>
+          <label class="switch"><input type="checkbox" id="notifEnabled" /><span class="slider"></span></label>
+        </div>
+        <div class="field">
+          <label>봇 토큰 (BotFather에서 발급)</label>
+          <input type="text" id="tgToken" placeholder="123456:ABC-DEF..." autocomplete="off" autocapitalize="off" spellcheck="false" />
+        </div>
+        <div class="field">
+          <label>Chat ID (내 채팅 번호)</label>
+          <input type="text" id="tgChatId" placeholder="숫자 ID" autocomplete="off" inputmode="numeric" />
+        </div>
+        <div class="row">
+          <button class="mini-btn" id="tgFindBtn">Chat ID 찾기</button>
+          <button class="mini-btn" id="tgTestBtn">테스트 전송</button>
+        </div>
+        <button class="mini-btn primary" id="tgSaveBtn">알림 설정 저장</button>
+        <div class="help">
+          ① 텔레그램에서 <b>@BotFather</b> → <b>/newbot</b> 으로 봇 생성 후 토큰 복사<br />
+          ② 만든 봇과 대화를 열고 아무 메시지나 한 번 전송<br />
+          ③ 위에 토큰 입력 → <b>Chat ID 찾기</b> 누르면 자동 입력됩니다.<br />
+          토큰은 이 기기에만 저장되며 서버·저장소에 올라가지 않습니다.
+        </div>
+      </div>
+    </details>
+
     <div class="hint">
       데이터는 이 기기에만 저장됩니다.<br />
       Safari 공유 → "홈 화면에 추가"로 앱처럼 사용하세요.
@@ -305,6 +402,16 @@
     var closeBtn   = document.getElementById("closeBtn");
     var toastEl    = document.getElementById("toast");
     var buttons    = Array.prototype.slice.call(document.querySelectorAll(".floor-btn"));
+
+    // 텔레그램 알림 설정 UI
+    var notifEnabled = document.getElementById("notifEnabled");
+    var notifDot     = document.getElementById("notifDot");
+    var tgToken      = document.getElementById("tgToken");
+    var tgChatId     = document.getElementById("tgChatId");
+    var tgFindBtn    = document.getElementById("tgFindBtn");
+    var tgTestBtn    = document.getElementById("tgTestBtn");
+    var tgSaveBtn    = document.getElementById("tgSaveBtn");
+    var TG_KEY       = "myparking.telegram.v1";
 
     var saveTimer = null;
     var toastTimer = null;
@@ -402,7 +509,57 @@
         render(data);
         showToast(floor + " 저장됨");
         if (navigator.vibrate) { try { navigator.vibrate(15); } catch (e) {} }
+        // 저장 성공 시 텔레그램 알림 전송
+        notifyParked(data);
       }, 350);
+    }
+
+    // ── 텔레그램 알림 ──
+    function loadTg() {
+      try { return JSON.parse(localStorage.getItem(TG_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function currentTgCfg() {
+      return {
+        enabled: notifEnabled.checked,
+        token: tgToken.value.trim(),
+        chatId: tgChatId.value.trim()
+      };
+    }
+    function saveTgCfg() {
+      var cfg = currentTgCfg();
+      try { localStorage.setItem(TG_KEY, JSON.stringify(cfg)); } catch (e) {}
+      updateNotifDot();
+      return cfg;
+    }
+    function updateNotifDot() {
+      var cfg = loadTg();
+      var on = !!(cfg.enabled && cfg.token && cfg.chatId);
+      notifDot.textContent = on ? "켜짐" : "꺼짐";
+      notifDot.classList.toggle("on", on);
+    }
+    function tgApi(token, method, params) {
+      var url = "https://api.telegram.org/bot" + encodeURIComponent(token) + "/" + method;
+      if (params) {
+        var qs = Object.keys(params).map(function (k) {
+          return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
+        }).join("&");
+        url += "?" + qs;
+      }
+      return fetch(url).then(function (r) { return r.json(); });
+    }
+    function notifyParked(data) {
+      var cfg = loadTg();
+      if (!cfg.enabled || !cfg.token || !cfg.chatId) return;
+      var text = "🅿️ 주차 위치 저장\n층: " + data.floor + "\n🕒 " + formatTime(data.savedAt);
+      tgApi(cfg.token, "sendMessage", { chat_id: cfg.chatId, text: text })
+        .catch(function () { /* 네트워크 오류는 조용히 무시 */ });
+    }
+    function initTgUI() {
+      var cfg = loadTg();
+      notifEnabled.checked = !!cfg.enabled;
+      tgToken.value = cfg.token || "";
+      tgChatId.value = cfg.chatId || "";
+      updateNotifDot();
     }
 
     // 이벤트 바인딩
@@ -427,10 +584,47 @@
       }
     });
 
+    // 알림 켬/끔 토글 → 즉시 저장
+    notifEnabled.addEventListener("change", saveTgCfg);
+
+    // Chat ID 찾기: 봇에게 보낸 최근 메시지에서 chat.id 추출
+    tgFindBtn.addEventListener("click", function () {
+      var token = tgToken.value.trim();
+      if (!token) { showToast("먼저 봇 토큰을 입력하세요"); return; }
+      showToast("Chat ID 찾는 중...");
+      tgApi(token, "getUpdates").then(function (j) {
+        if (!j || !j.ok) { showToast("토큰이 올바르지 않습니다"); return; }
+        var ups = j.result || [], id = null;
+        for (var i = ups.length - 1; i >= 0; i--) {
+          var m = ups[i].message || ups[i].edited_message || ups[i].channel_post;
+          if (m && m.chat && m.chat.id != null) { id = m.chat.id; break; }
+        }
+        if (id != null) { tgChatId.value = String(id); saveTgCfg(); showToast("Chat ID 찾음: " + id); }
+        else { showToast("먼저 봇에게 메시지를 보내주세요"); }
+      }).catch(function () { showToast("네트워크 오류"); });
+    });
+
+    // 테스트 전송
+    tgTestBtn.addEventListener("click", function () {
+      var cfg = currentTgCfg();
+      if (!cfg.token || !cfg.chatId) { showToast("토큰과 Chat ID를 입력하세요"); return; }
+      showToast("테스트 전송 중...");
+      tgApi(cfg.token, "sendMessage", { chat_id: cfg.chatId, text: "✅ 내 차 어디있지? 알림 테스트입니다." })
+        .then(function (j) { showToast(j && j.ok ? "테스트 메시지 전송됨!" : "전송 실패: 설정을 확인하세요"); })
+        .catch(function () { showToast("네트워크 오류"); });
+    });
+
+    // 알림 설정 저장
+    tgSaveBtn.addEventListener("click", function () {
+      saveTgCfg();
+      showToast("알림 설정 저장됨");
+    });
+
     // 다른 탭/기기 복귀 시 최신 상태 반영
     window.addEventListener("focus", function () { render(load()); });
 
     // 초기 렌더
+    initTgUI();
     render(load());
   })();
 </script>
